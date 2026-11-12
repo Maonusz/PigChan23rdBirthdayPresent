@@ -5,8 +5,30 @@ import { GiftAudio, GAIN } from './audio.js';
 import { renderLetter } from './letter-format.js';
 import { fetchLetter, logout } from './letter-source.js';
 
-const W = 640;
+const W = 640; // bề ngang thế giới nhìn thấy tối đa (ngang/desktop)
 const H = 360;
+// Điện thoại dọc: thu hẹp bề ngang khung nhìn để cảnh phóng to, cao ~66% màn hình
+// (thay vì một dải mỏng ở giữa). Cảnh vẫn là thế giới 1280×360, camera chỉ nhìn phần giữa.
+const PORTRAIT_FILL = 0.66;
+const MIN_VIEW_W = 260;
+function viewWidth() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (!vw || !vh) return W;
+  const w = Math.round((H * vw) / (vh * PORTRAIT_FILL));
+  return Math.min(W, Math.max(MIN_VIEW_W, w)) & ~1;
+}
+/** Giữ camera đúng kích thước khung nhìn hiện tại; gọi lại khi xoay máy. */
+function setSceneTint(name) {
+  if (name) document.body.dataset.scene = name;
+  else delete document.body.dataset.scene;
+}
+function onViewResize(scene, fn) {
+  const handler = (size) => { scene.cameras.main.setSize(size.width, size.height); fn?.(size.width); };
+  scene.scale.on('resize', handler);
+  scene.events.once('shutdown', () => scene.scale.off('resize', handler));
+  fn?.(scene.scale.gameSize.width);
+}
 const GROUND = 304;
 const IVORY = [250, 243, 230];
 const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -180,9 +202,11 @@ class GiftSea extends Phaser.Scene {
   create(data) {
     this.flow = new SeaFlow({ returning: !!data?.returning });
     this.cameras.main.setBounds(0, 0, 1280, H);
-    this.cameras.main.setScroll(320, 0);
+    // Biển: camera đứng yên, canh giữa Pig (x=640) dù khung nhìn rộng hay hẹp.
+    onViewResize(this, (w) => this.cameras.main.setScroll(640 - w / 2, 0));
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.fadeIn(1200, ...IVORY);
+    setSceneTint('sea');
     addLayers(this, 'sea');
 
     // Foam: tối đa 3 dải mảnh, lệch nhịp 4–6s; vẽ theo thời gian, không theo frame.
@@ -273,6 +297,7 @@ class GiftSea extends Phaser.Scene {
     audio.setAmbience('off', 2);
     this.time.delayedCall(walkMs - 1000, () => {
       this.cameras.main.fadeOut(1000, ...IVORY);
+      setSceneTint(null);
       this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GiftGarden'));
     });
   }
@@ -284,6 +309,7 @@ class GiftGarden extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBounds(0, 0, 1280, H);
     cam.setRoundPixels(true);
+    onViewResize(this);
     addLayers(this, 'garden');
     // Ghế và phong thư: chỉ một renderer (props atlas) theo anchor layout garden_bg.
     this.add.image(1030, GROUND, 'props', 'wooden_bench').setOrigin(0.5, 1).setScale(2).setDepth(30);
@@ -300,6 +326,7 @@ class GiftGarden extends Phaser.Scene {
     this.pig.play('pig-walk');
     cam.startFollow(this.pig, true, 0.08, 0.08, -60, 0);
     cam.fadeIn(1100, ...IVORY);
+    setSceneTint('garden');
     audio.setAmbience('garden', 2);
     if (!letterReceived) this.time.delayedCall(900, () => setCaption('Có một bức thư đang đợi bạn.'));
 
@@ -333,6 +360,7 @@ class GiftGarden extends Phaser.Scene {
     audio.setAmbience('off', 1.2);
     this.time.delayedCall(walkMs - 1000, () => {
       this.cameras.main.fadeOut(1000, ...IVORY);
+      setSceneTint(null);
       this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GiftSea', { returning: true }));
     });
   }
@@ -362,7 +390,7 @@ class GiftGarden extends Phaser.Scene {
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game-container',
-  width: W,
+  width: viewWidth(),
   height: H,
   pixelArt: true,
   roundPixels: true,
@@ -373,6 +401,14 @@ const game = new Phaser.Game({
   // CSP img-src không có blob: → nạp ảnh bằng HTMLImageElement (giống src/config.js, T-029).
   loader: { imageLoadType: 'HTMLImageElement' },
   scene: [GiftBoot, GiftSea, GiftGarden]
+});
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const w = viewWidth();
+    if (w !== game.scale.gameSize.width) game.scale.setGameSize(w, H);
+  }, 120);
 });
 window.__giftGame = game;
 window.__giftAudio = audio; // chỉ để regression đọc trạng thái mute/piano, không có hook đổi phase

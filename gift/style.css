@@ -16,6 +16,20 @@ html, body {
 body { display: flex; align-items: center; justify-content: center; }
 #game-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+/* Điện thoại dọc: phần trống trên/dưới cảnh mang màu trời/đất của cảnh để trông như tràn màn hình.
+   Đổi màu mượt cùng nhịp mờ chuyển cảnh (về màu ngà khi chuyển). */
+@media (orientation: portrait) {
+  #game-container { position: relative; }
+  #game-container canvas { position: relative; z-index: 1; }
+  #game-container::before, #game-container::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 50%;
+    background-color: var(--bg); transition: background-color 1s ease;
+  }
+  #game-container::before { top: 0; background-color: var(--scene-sky, var(--bg)); }
+  #game-container::after { bottom: 0; background-color: var(--scene-ground, var(--bg)); }
+  body[data-scene="sea"] { --scene-sky: #c9bca9; --scene-ground: #eee3ce; }
+  body[data-scene="garden"] { --scene-sky: #dbe7f2; --scene-ground: #5d4a3e; }
+}
 [hidden] { display: none !important; }
 
 .gift-overlay {
