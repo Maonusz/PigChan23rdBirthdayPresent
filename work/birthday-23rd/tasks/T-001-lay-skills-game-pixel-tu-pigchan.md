@@ -2,10 +2,10 @@
 id: T-001
 title: Lấy skills làm game (pixel art) từ repo pigchan sang
 project: birthday-23rd
-status: todo
-agent:
+status: doing
+agent: claude
 reviewer: codex
-branch:
+branch: feature/T-001-lay-skills-game-pixel
 pr:
 depends_on: []
 created: 2026-11-13

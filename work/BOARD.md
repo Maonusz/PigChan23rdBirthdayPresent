@@ -17,7 +17,7 @@ Mã task tiếp theo: **T-006** (repo này đánh số riêng từ T-001; mã `T
 
 | Mã | Task | Dự án | Trạng thái | Agent | Nhánh | Phụ thuộc | Cập nhật (JST) |
 |---|---|---|---|---|---|---|---|
-| T-001 | Lấy skills làm game (pixel art) từ repo pigchan sang | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
+| T-001 | Lấy skills làm game (pixel art) từ repo pigchan sang | birthday-23rd | doing | claude | feature/T-001-lay-skills-game-pixel | — | 2026-11-13 |
 | T-002 | Chỉnh layout để trên điện thoại không bị bé quá | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
 | T-003 | Thêm / hoàn thiện nút quay lại biển cho người chơi | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
 | T-004 | Thêm phần lưu hình biển cho người dùng | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
