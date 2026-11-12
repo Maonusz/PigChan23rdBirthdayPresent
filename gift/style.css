@@ -86,6 +86,7 @@ canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edge
 .gl-dear-sub { font-size: 17px; line-height: 1.55; }
 .gl-aside { display: block; font-size: 15px; font-weight: 400; line-height: 1.55; opacity: 0.78; margin-top: 2px; }
 .gl-lead { font-size: 19px; font-weight: 700; line-height: 1.65; }
+.gl-lead-in { font-size: 19px; font-weight: 700; }
 .gl-shift { margin-top: 28px !important; }
 .gl-shift::before {
   content: ""; display: block; width: 44px; height: 2px; border-radius: 2px;

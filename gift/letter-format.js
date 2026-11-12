@@ -18,6 +18,10 @@ const PS = /^(?:P\.\s?S\b|P\.?S\.?(?=[\s:：.,、]|$)|P\/S\b)/iu;
 const GREETING = /^(?:dear|gửi|thân gửi|thương gửi|kính gửi|to|hi|hello|chào|親愛なる)(?=[\s,，、:：!！]|$)/iu;
 const GREETING_END = /(?:へ|さんへ|ちゃんへ|[,，、:：])$/u;
 const SENTENCE_END = /[.!?。！？]$/u;
+// Dòng kết thúc thế này thì câu chưa xong (thư hay xuống dòng/cách dòng giữa câu).
+const VI_OPEN_END = /[\p{L}\p{N},，;；\-–—]$/u;
+const VI_CONT_START = /^[\p{Ll}]/u;
+const JA_CONT_END = /(?:[、，]|[とてでがをにはもし]|けど|けれど|ので|のに|から)$/u;
 
 export const MAX_GREETING_LINES = 3;
 export const MAX_SIGNATURE_LINES = 3;
@@ -89,10 +93,38 @@ export function paraLines(lines, lang) {
   if (lang !== 'ja') return [joinLines(lines)];
   const out = [];
   for (const l of lines) {
-    if (out.length && /[、，]$/u.test(out.at(-1))) out[out.length - 1] = joinLines([out.at(-1), l]);
+    if (out.length && JA_CONT_END.test(out.at(-1))) out[out.length - 1] = joinLines([out.at(-1), l]);
     else out.push(l);
   }
   return out;
+}
+
+/** Đoạn sau có phải là phần tiếp của câu đang dở ở đoạn trước không. */
+export function continues(prevLines, nextLines) {
+  const a = joinLines(prevLines);
+  const b = joinLines(nextLines);
+  const lang = detectLang(a);
+  if (lang !== detectLang(b)) return false;
+  const last = prevLines.at(-1);
+  if (lang === 'ja') return JA_CONT_END.test(last);
+  return VI_OPEN_END.test(last) && VI_CONT_START.test(nextLines[0]);
+}
+
+/** Gộp các đoạn bị cách dòng giữa câu (chỉ gộp đoạn chữ liền nhau, không qua nhịp nghỉ). */
+export function mergeContinuations(paras) {
+  const out = [];
+  for (const p of paras) {
+    const prev = out.at(-1);
+    if (Array.isArray(p) && Array.isArray(prev) && continues(prev, p)) out[out.length - 1] = [...prev, ...p];
+    else out.push(Array.isArray(p) ? [...p] : p);
+  }
+  return out;
+}
+
+/** Câu đầu của đoạn mở thư (vd "Chúc mừng sinh nhật …!") để in đậm khi cả đoạn dài. */
+export function leadSentence(text) {
+  const m = text.match(/^.{4,90}?[!?！？。](?=\s|$)/u);
+  return m && m[0].length < text.length ? m[0] : '';
 }
 
 function isShortBlock(lines, max) {
@@ -132,6 +164,9 @@ export function formatLetter(raw) {
     }
   }
 
+  // Nối các đoạn bị cách dòng giữa câu trước khi tìm chữ ký (để phần đuôi câu không bị nhận nhầm).
+  body.splice(0, body.length, ...mergeContinuations(body));
+
   // Chữ ký: đoạn cuối của thân thư nếu ngắn và không phải đoạn duy nhất.
   let signature = null;
   const lastIdx = body.length - 1;
@@ -152,7 +187,11 @@ export function formatLetter(raw) {
     const text = joinLines(p);
     const lang = detectLang(text);
     const block = { type: 'para', lang, text, lines: paraLines(p, lang) };
-    if (!leadDone) { leadDone = true; if (len(text) <= 160) block.lead = true; }
+    if (!leadDone) {
+      leadDone = true;
+      if (len(text) <= 160) block.lead = true;
+      else if (lang === 'vi') block.leadIn = leadSentence(text);
+    }
     if (prevLang && prevLang !== lang && !afterPause) block.shift = true;
     prevLang = lang;
     afterPause = false;
@@ -162,7 +201,7 @@ export function formatLetter(raw) {
   if (psParas.length) {
     blocks.push({
       type: 'ps',
-      paras: psParas.map((p) => {
+      paras: mergeContinuations(psParas).map((p) => {
         if (!Array.isArray(p)) return { lang: 'vi', text: p.pause, pause: true };
         const lang = detectLang(joinLines(p));
         return { lang, text: joinLines(p), lines: paraLines(p, lang) };
@@ -220,7 +259,11 @@ export function renderLetter(container, raw, doc = container.ownerDocument) {
     const lines = b.lines || [b.text];
     const label = /^(?:P\.?\s?S\.?|P\/S)[:：]?$/iu.test(lines[0]) && lines.length > 1;
     if (label) n.append(el('span', 'gl-ps-label', lines[0]), doc.createElement('br'));
-    const rest = label ? lines.slice(1) : lines;
+    let rest = label ? lines.slice(1) : lines;
+    if (b.leadIn && rest.length === 1 && rest[0].startsWith(b.leadIn)) {
+      n.append(el('span', 'gl-lead-in', b.leadIn));
+      rest = [rest[0].slice(b.leadIn.length)];
+    }
     // Nhiều câu (tiếng Nhật): mỗi câu một khối để phân biệt với dòng tự wrap.
     if (rest.length > 1) rest.forEach((l) => n.append(fill(el('span', 'gl-line'), [l])));
     else fill(n, rest);
