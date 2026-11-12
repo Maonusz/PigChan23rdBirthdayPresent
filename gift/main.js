@@ -30,6 +30,7 @@ const ui = {
   musicBtn: $('gift-music'),
   rest: $('gift-rest'),
   reread: $('gift-reread'),
+  toSea: $('gift-to-sea'),
   logout: $('gift-logout'),
   mute: $('gift-mute')
 };
@@ -65,6 +66,7 @@ function loadLetter() {
 const MUSIC_HINT_MS = 3000;
 let letterSession = 0;
 let musicHintTimer = null;
+let letterReceived = false; // đã nhận thư một lần → lần sau về vườn không diễn lại cảnh nhận thư
 
 function clearMusicHint() {
   if (musicHintTimer) { clearTimeout(musicHintTimer); musicHintTimer = null; }
@@ -126,6 +128,10 @@ ui.letterClose.addEventListener('click', () => {
   show(ui.rest, true);
 });
 ui.reread.addEventListener('click', () => openLetter(null));
+ui.toSea.addEventListener('click', () => {
+  audio.unlockFromGesture();
+  if (game.scene.isActive('GiftGarden')) game.scene.getScene('GiftGarden').toSea();
+});
 
 // ---------- Scenes ----------
 class GiftBoot extends Phaser.Scene {
@@ -171,8 +177,8 @@ function addLayers(scene, prefix) {
 
 class GiftSea extends Phaser.Scene {
   constructor() { super('GiftSea'); }
-  create() {
-    this.flow = new SeaFlow();
+  create(data) {
+    this.flow = new SeaFlow({ returning: !!data?.returning });
     this.cameras.main.setBounds(0, 0, 1280, H);
     this.cameras.main.setScroll(320, 0);
     this.cameras.main.setRoundPixels(true);
@@ -210,6 +216,8 @@ class GiftSea extends Phaser.Scene {
     ui.askGo.addEventListener('click', onGo);
     ui.askStay.addEventListener('click', onStay);
     ui.goSmall.addEventListener('click', onGo);
+    // Quay lại từ vườn: không hỏi lại sau 30s, nút "Đến khu vườn" có sẵn ở góc.
+    show(ui.goSmall, this.flow.canShowGardenButton);
     this.events.once('shutdown', () => {
       ui.askGo.removeEventListener('click', onGo);
       ui.askStay.removeEventListener('click', onStay);
@@ -279,7 +287,9 @@ class GiftGarden extends Phaser.Scene {
     addLayers(this, 'garden');
     // Ghế và phong thư: chỉ một renderer (props atlas) theo anchor layout garden_bg.
     this.add.image(1030, GROUND, 'props', 'wooden_bench').setOrigin(0.5, 1).setScale(2).setDepth(30);
-    this.letterProp = this.add.image(1045, 288, 'props', 'letter').setOrigin(0.5, 1).setDepth(31);
+    this.letterProp = this.add.image(1045, 288, 'props', 'letter').setOrigin(0.5, 1).setDepth(31)
+      .setVisible(!letterReceived);
+    this.leaving = false;
     // Hoa delphinium tĩnh dọc lối (không nhân bản ghế/thư).
     [180, 360, 610, 820, 1150].forEach((x, i) => {
       this.add.image(x, GROUND, 'props', ['delphinium_a', 'delphinium_b', 'delphinium_c'][i % 3])
@@ -291,7 +301,7 @@ class GiftGarden extends Phaser.Scene {
     cam.startFollow(this.pig, true, 0.08, 0.08, -60, 0);
     cam.fadeIn(1100, ...IVORY);
     audio.setAmbience('garden', 2);
-    this.time.delayedCall(900, () => setCaption('Có một bức thư đang đợi bạn.'));
+    if (!letterReceived) this.time.delayedCall(900, () => setCaption('Có một bức thư đang đợi bạn.'));
 
     const walkMs = reduced ? 4500 : 10000;
     this.tweens.add({
@@ -299,12 +309,36 @@ class GiftGarden extends Phaser.Scene {
       x: 1000,
       duration: walkMs,
       ease: 'Sine.out',
-      onComplete: () => this.receive()
+      onComplete: () => (letterReceived ? this.arrive() : this.receive())
     });
-    this.events.once('shutdown', () => setCaption(''));
+    this.events.once('shutdown', () => { setCaption(''); show(ui.rest, false); });
+  }
+
+  /** Lần về vườn sau: Pig đã cầm thư, đến ghế là hiện các nút (không tự mở thư). */
+  arrive() {
+    this.pig.stop().setFrame('pig_letter');
+    show(ui.rest, true);
+  }
+
+  /** Nút "Về biển": Pig quay lưng đi về bên trái, mờ dần rồi về biển. */
+  toSea() {
+    if (this.leaving) return;
+    this.leaving = true;
+    show(ui.rest, false);
+    setCaption('');
+    this.tweens.killTweensOf(this.pig);
+    this.pig.setAngle(0).setFlipX(true).play('pig-walk');
+    const walkMs = reduced ? 1200 : 2400;
+    this.tweens.add({ targets: this.pig, x: this.pig.x - 220, duration: walkMs, ease: 'Linear' });
+    audio.setAmbience('off', 1.2);
+    this.time.delayedCall(walkMs - 1000, () => {
+      this.cameras.main.fadeOut(1000, ...IVORY);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GiftSea', { returning: true }));
+    });
   }
 
   receive() {
+    letterReceived = true;
     this.pig.stop().setFrame('pig');
     setCaption('');
     // Nghiêng nhìn một nhịp, phong thư bay về tay rồi mở thư.

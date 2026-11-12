@@ -4,10 +4,11 @@
 export const ASK_AFTER_MS = 30000;
 
 export class SeaFlow {
-  constructor({ askAfterMs = ASK_AFTER_MS } = {}) {
+  constructor({ askAfterMs = ASK_AFTER_MS, returning = false } = {}) {
     this.askAfterMs = askAfterMs;
     this.elapsed = 0;
-    this.phase = 'idle'; // idle → asking → staying | leaving
+    // idle → asking → staying | leaving. Quay lại từ vườn: đã từng hỏi rồi → vào thẳng staying.
+    this.phase = returning ? 'staying' : 'idle';
   }
 
   /** Cộng thời gian foreground; trả true đúng một lần khi tới lúc hỏi. */
