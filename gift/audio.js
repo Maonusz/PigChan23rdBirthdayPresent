@@ -2,6 +2,15 @@
 // Blue qua Phaser sound, piano MP3 stream bằng HTMLAudioElement (không decode cả bài).
 
 const MUTE_KEY = 'pigchan-gift-mute';
+const SILENCE = 'assets/audio/silence.wav';
+const PIANO = 'assets/gift/audio/letter-piano.mp3';
+const IS_IOS = /iP(?:hone|ad|od)/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// iPhone gạt sang chế độ im lặng thì Web Audio (nhạc Blue, sóng, gió) bị tắt tiếng,
+// chỉ <audio> mới kêu. Đặt phiên âm thanh là "playback" (như app nghe nhạc) trước khi
+// Phaser tạo AudioContext để vẫn nghe được. Safari 17+; trình duyệt khác bỏ qua.
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* bỏ qua */ }
 
 export const GAIN = Object.freeze({ blue: 0.48, wave: 0.08, wind: 0.04, windUnderPiano: 0.015 });
 
@@ -28,7 +37,56 @@ export class GiftAudio {
     this.playToken = 0;
     this.pianoListener = null;
     this.listeners = new Set();
+    this.primed = false;
+    this.keepAlive = null;
     document.addEventListener('visibilitychange', () => this.onVisibility());
+    // iOS có thể treo AudioContext ("interrupted") sau cuộc gọi/khóa màn hình: chạm là đánh thức lại.
+    const wake = () => this.resumeContext();
+    document.addEventListener('pointerdown', wake, true);
+    document.addEventListener('touchend', wake, true);
+  }
+
+  resumeContext() {
+    const ctx = this.ctx || this.game?.sound?.context;
+    if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {});
+  }
+
+  /**
+   * Gọi ĐỒNG BỘ trong một cú chạm thật (nút Bắt đầu, nút rời biển). Trên điện thoại:
+   * - đánh thức AudioContext;
+   * - iOS cũ (chưa có audioSession): phát vòng lặp im lặng bằng <audio> để Web Audio không bị
+   *   nút gạt im lặng tắt tiếng;
+   * - "mở khóa" phần tử piano bằng một lần play() im lặng, để lúc thư mở (không phải cú chạm)
+   *   piano vẫn được phép tự phát.
+   */
+  unlockFromGesture() {
+    this.resumeContext();
+    if (IS_IOS && !navigator.audioSession && !this.keepAlive) {
+      const k = new Audio(SILENCE);
+      k.loop = true;
+      k.setAttribute('playsinline', '');
+      k.play().catch(() => {});
+      this.keepAlive = k;
+    }
+    this.primePiano();
+  }
+
+  primePiano() {
+    this.preparePiano();
+    const a = this.piano;
+    if (this.primed || !a.paused || this.pianoWanted) return;
+    this.primed = true;
+    const real = a.src;
+    this.priming = true;
+    a.src = SILENCE;
+    const done = () => {
+      this.priming = false;
+      if (this.pianoWanted) return; // playPiano đã lấy lại phần tử
+      a.pause();
+      a.src = real;
+      a.load();
+    };
+    a.play().then(done, done);
   }
 
   attach(game) {
@@ -130,12 +188,18 @@ export class GiftAudio {
     const a = new Audio();
     a.preload = 'metadata';
     a.loop = false;
+    a.setAttribute('playsinline', '');
     a.muted = this.muted;
-    a.src = 'assets/gift/audio/letter-piano.mp3';
+    a.src = PIANO;
     // Báo lỗi tải cho UI (gắn một lần). Không dùng sự kiện 'playing' để ẩn nút Bật nhạc:
     // media có thể phát ở volume 0 (GIFT-R03); chỉ startPlay thành công + fade mới báo 'started'.
-    a.addEventListener('error', () => this.emitPiano('error'));
+    a.addEventListener('error', () => { if (!this.priming) this.emitPiano('error'); });
     this.piano = a;
+  }
+
+  ensurePianoSrc() {
+    const a = this.piano;
+    if (!a.src.endsWith(PIANO)) { this.priming = false; a.src = PIANO; }
   }
 
   onPianoState(fn) { this.pianoListener = fn; }
@@ -150,6 +214,7 @@ export class GiftAudio {
     this.preparePiano();
     const a = this.piano;
     this.pianoWanted = true;
+    this.ensurePianoSrc();
     this.clearPianoFade();
     try { a.currentTime = 0; } catch { /* metadata chưa có */ }
     a.volume = 0;
@@ -161,7 +226,8 @@ export class GiftAudio {
     this.preparePiano();
     this.pianoWanted = true;
     const a = this.piano;
-    if (a.error) { a.src = a.src; a.load(); }
+    this.ensurePianoSrc();
+    if (a.error) { a.src = PIANO; a.load(); }
     return this.startPlay(1200);
   }
 
@@ -218,6 +284,11 @@ export class GiftAudio {
   }
 
   onVisibility() {
+    if (!document.hidden) this.resumeContext();
+    if (this.keepAlive) {
+      if (document.hidden) this.keepAlive.pause();
+      else this.keepAlive.play().catch(() => {});
+    }
     if (!this.piano) return;
     if (document.hidden) {
       // !paused bao gồm cả play() đang chờ tải; pause hủy promise đó.

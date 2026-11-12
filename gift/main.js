@@ -157,7 +157,7 @@ class GiftBoot extends Phaser.Scene {
       show(ui.start, false);
       show(ui.mute, true);
       audio.attach(this.game);
-      if (this.sound.context?.state === 'suspended') this.sound.context.resume().catch(() => {});
+      audio.unlockFromGesture();
       this.scene.start('GiftSea');
     }, { once: true });
   }
@@ -201,7 +201,7 @@ class GiftSea extends Phaser.Scene {
     this.tweens.add({ targets: this.blue, volume: GAIN.blue, duration: 2000 });
     audio.setAmbience('sea', 2);
 
-    const onGo = () => this.leave();
+    const onGo = () => { audio.unlockFromGesture(); this.leave(); };
     const onStay = () => {
       this.flow.stay();
       show(ui.ask, false);
