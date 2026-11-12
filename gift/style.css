@@ -1,0 +1,116 @@
+:root {
+  color-scheme: light;
+  --bg: #faf3e6;
+  --ink: #4a3b32;
+  --paper: #fffaf1;
+  --accent: #6f8fb8;
+  --accent-ink: #ffffff;
+  --line: #e6d8c3;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--ink);
+  font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", system-ui, sans-serif;
+}
+body { display: flex; align-items: center; justify-content: center; }
+#game-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+[hidden] { display: none !important; }
+
+.gift-overlay {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  padding: 64px 16px 16px; background: rgba(250, 243, 230, 0.92); z-index: 20;
+  animation: gift-fade 0.7s ease both;
+}
+.gift-overlay-soft { background: rgba(60, 48, 40, 0.18); }
+.gift-card {
+  background: var(--paper); border: 2px solid var(--line); border-radius: 18px;
+  padding: 22px 20px; max-width: 420px; width: 100%; text-align: center;
+  box-shadow: 0 8px 28px rgba(74, 59, 50, 0.16);
+}
+.gift-hello { font-size: 20px; font-weight: 700; margin-bottom: 18px; }
+.gift-question { font-size: 18px; margin-bottom: 16px; }
+.gift-note { font-size: 14px; opacity: 0.75; margin-top: 14px; }
+.gift-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.gift-btn {
+  font: inherit; font-size: 16px; min-height: 44px; padding: 10px 18px;
+  border-radius: 999px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.gift-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.gift-btn-main { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.gift-btn-small { font-size: 14px; min-height: 40px; padding: 8px 14px; opacity: 0.85; }
+.gift-btn:disabled { opacity: 0.6; cursor: default; }
+.gift-corner { position: fixed; top: 12px; z-index: 15; font-size: 14px; min-height: 40px; padding: 8px 14px; background: rgba(255, 255, 255, 0.85); }
+.gift-corner-left { left: 12px; }
+.gift-corner-right { right: 12px; }
+/* GIFT-R02: nút tiếng luôn trên mọi lớp phủ (hỏi z20, thư z30) để bấm được khi piano đang phát. */
+#gift-mute { z-index: 40; }
+.gift-caption {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 15;
+  background: rgba(255, 250, 241, 0.9); border-radius: 12px; padding: 8px 16px;
+  font-size: 17px; max-width: calc(100% - 32px); text-align: center;
+  animation: gift-fade 0.8s ease both;
+}
+/* Thư (T-069): giấy ấm, cột đọc ~36em, canh trái; mobile chừa safe area, nút tiếng ở góc phải trên. */
+.gift-letter {
+  position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
+  padding: max(64px, calc(env(safe-area-inset-top) + 60px)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(60, 48, 40, 0.28); animation: gift-fade 0.8s ease both;
+}
+.gift-paper {
+  background: var(--paper); border-radius: 14px; border: 2px solid var(--line);
+  width: 100%; max-width: 600px; max-height: 100%; display: flex; flex-direction: column;
+  padding: 10px 6px 12px; box-shadow: 0 10px 32px rgba(74, 59, 50, 0.22);
+}
+.gift-letter-text {
+  flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  font-size: 18px; line-height: 1.7; padding: 14px 14px 20px; margin-bottom: 10px;
+  text-align: left; user-select: text; -webkit-user-select: text;
+}
+.gift-letter-text.is-formatted { white-space: normal; overflow-wrap: break-word; }
+.gift-letter-text.is-formatted p { margin: 0 0 14px; }
+.gift-letter-text [lang="ja"] {
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "YuGothic", Meiryo,
+    "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+  line-break: strict; word-break: normal; overflow-wrap: anywhere; letter-spacing: 0.02em;
+}
+.gl-line { display: block; }
+.gl-line + .gl-line { margin-top: 5px; }
+.gl-greeting { margin: 2px 0 18px; }
+.gl-greeting p { margin: 0 0 2px !important; }
+.gl-dear { font-size: 20px; font-weight: 700; line-height: 1.45; }
+.gl-dear-sub { font-size: 17px; line-height: 1.55; }
+.gl-aside { display: block; font-size: 15px; font-weight: 400; line-height: 1.55; opacity: 0.78; margin-top: 2px; }
+.gl-lead { font-size: 19px; font-weight: 700; line-height: 1.65; }
+.gl-shift { margin-top: 28px !important; }
+.gl-shift::before {
+  content: ""; display: block; width: 44px; height: 2px; border-radius: 2px;
+  background: var(--line); margin: 0 0 22px;
+}
+.gl-pause { text-align: center; letter-spacing: 0.4em; opacity: 0.6; margin: 20px 0 22px !important; }
+.gl-sign { margin: 26px 0 8px; padding-right: 4px; text-align: right; }
+.gl-sign p { margin: 0 !important; line-height: 1.6; }
+.gl-sign-line:last-child { font-weight: 700; }
+.gl-ps {
+  margin-top: 26px; padding-top: 14px; border-top: 1px dashed var(--line);
+  font-size: 16px; line-height: 1.7; opacity: 0.92;
+}
+.gl-ps-label { font-weight: 700; letter-spacing: 0.04em; }
+.gl-ps p:last-child { margin-bottom: 0 !important; }
+.gift-paper > .gift-row { padding: 0 8px; }
+@media (min-width: 640px) {
+  .gift-paper { padding: 18px 16px 14px; }
+  .gift-letter-text { padding: 16px 22px 22px; }
+}
+.gift-rest {
+  position: fixed; left: 0; right: 0; bottom: 16px; z-index: 15;
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 0 16px;
+}
+@keyframes gift-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .gift-overlay, .gift-letter, .gift-caption { animation: none; }
+}

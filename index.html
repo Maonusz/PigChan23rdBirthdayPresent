@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:,">
+  <title>Pig-chan</title>
+  <link rel="preload" href="assets/fonts/MPLUSRounded1c-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+  <link rel="stylesheet" href="gift/style.css">
+  <link rel="stylesheet" href="gate.css">
+  <script src="assets/vendor/phaser.min.js"></script>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <div id="gate" class="gift-overlay">
+    <form id="gate-form" class="gift-card" autocomplete="off">
+      <p class="gift-hello">Pig-chan</p>
+      <label class="gift-question" for="gate-pw">Mật khẩu</label>
+      <input id="gate-pw" class="gift-input" type="password" autocomplete="current-password" maxlength="128" required>
+      <p id="gate-error" class="gift-note gift-error" role="alert" hidden></p>
+      <div class="gift-row"><button id="gate-btn" class="gift-btn gift-btn-main" type="submit">Mở quà</button></div>
+    </form>
+  </div>
+
+
+  <div id="gift-start" class="gift-overlay" hidden>
+    <div class="gift-card">
+      <p class="gift-hello">Chúc mừng sinh nhật, Pig-chan</p>
+      <button id="gift-start-btn" class="gift-btn gift-btn-main" type="button" disabled>Bắt đầu</button>
+      <p class="gift-note">Bật tiếng nhỏ để nghe biển nhé.</p>
+    </div>
+  </div>
+
+  <div id="gift-ask" class="gift-overlay gift-overlay-soft" hidden role="dialog" aria-labelledby="gift-ask-title">
+    <div class="gift-card">
+      <p id="gift-ask-title" class="gift-question">Bạn có muốn rời biển không?</p>
+      <div class="gift-row">
+        <button id="gift-ask-go" class="gift-btn gift-btn-main" type="button">Có, đến khu vườn</button>
+        <button id="gift-ask-stay" class="gift-btn" type="button">Ở lại thêm một chút</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="gift-go-small" class="gift-btn gift-corner gift-corner-left" type="button" hidden>Đến khu vườn</button>
+  <button id="gift-mute" class="gift-btn gift-corner gift-corner-right" type="button" aria-pressed="false" hidden>Tiếng: bật</button>
+  <p id="gift-caption" class="gift-caption" hidden aria-live="polite"></p>
+
+  <div id="gift-letter" class="gift-letter" hidden role="dialog" aria-label="Bức thư">
+    <div class="gift-paper">
+      <div id="gift-letter-text" class="gift-letter-text" tabindex="0"></div>
+      <div class="gift-row">
+        <button id="gift-music" class="gift-btn" type="button" hidden>Bật nhạc</button>
+        <button id="gift-letter-close" class="gift-btn gift-btn-main" type="button">Ngắm vườn</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gift-rest" class="gift-rest" hidden>
+    <button id="gift-reread" class="gift-btn gift-btn-main" type="button">Đọc lại thư</button>
+    <button id="gift-logout" class="gift-btn gift-btn-small" type="button">Đăng xuất</button>
+  </div>
+
+  <script type="module" src="gate.js"></script>
+</body>
+</html>

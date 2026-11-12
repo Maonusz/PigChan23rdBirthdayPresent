@@ -1,0 +1,7 @@
+.gift-input {
+  font: inherit; font-size: 18px; width: 100%; min-height: 44px; padding: 10px 14px; margin: 4px 0 14px;
+  border: 2px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink);
+}
+.gift-input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#gate-form label { display: block; }
+.gift-error { color: #b0453a; opacity: 1; margin: -6px 0 12px; }
