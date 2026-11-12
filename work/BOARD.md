@@ -2,7 +2,9 @@
 
 Mọi agent đọc file này **đầu mỗi phiên**. Quy trình: [docs/agents/WORKFLOW.md](../docs/agents/WORKFLOW.md).
 
-Mã task tiếp theo: **chờ anh chốt** (code hiện có đã nhắc mã từ repo gốc, vd. `T-066` — xem "Câu hỏi mở" trong PRD của dự án).
+Mã task tiếp theo: **T-006** (repo này đánh số riêng từ T-001; mã `T-066` trong code là tham chiếu từ dự án bên repo pigchan, không dùng lại ở đây).
+
+> **Ủy quyền tạm thời (anh giao 2026-11-13):** với các task T-001…T-005 bên dưới, sau khi Codex review đạt và Nini QA đạt, **Nini được tự commit và merge PR thay anh** (thay cho quy tắc "chỉ anh merge" trong AGENTS.md). Ủy quyền chỉ áp dụng cho 5 task này và hết hiệu lực khi cả 5 task xong; các task sau quay lại quy tắc gốc.
 
 ## Cách đọc
 
@@ -15,7 +17,11 @@ Mã task tiếp theo: **chờ anh chốt** (code hiện có đã nhắc mã từ
 
 | Mã | Task | Dự án | Trạng thái | Agent | Nhánh | Phụ thuộc | Cập nhật (JST) |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| T-001 | Lấy skills làm game (pixel art) từ repo pigchan sang | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
+| T-002 | Chỉnh layout để trên điện thoại không bị bé quá | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
+| T-003 | Thêm / hoàn thiện nút quay lại biển cho người chơi | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
+| T-004 | Thêm phần lưu hình biển cho người dùng | birthday-23rd | todo | gợi ý: claude → review: codex | — | — | 2026-11-13 |
+| T-005 | Cải thiện đồ hoạ của vườn | birthday-23rd | todo | gợi ý: claude → review: codex | — | T-001 | 2026-11-13 |
 
 ## Dự án hiện có
 

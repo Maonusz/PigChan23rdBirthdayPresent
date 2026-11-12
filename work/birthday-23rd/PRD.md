@@ -49,7 +49,7 @@ Website tĩnh làm quà tặng sinh nhật 23 tuổi cho Pig-chan: một trải 
 - [ ] Nội dung thư có còn thay đổi không? Nếu có, ai mã hóa lại `letter.enc.json` và bằng công cụ nào (công cụ mã hóa không nằm trong repo)?
 - [ ] Danh sách thiết bị/trình duyệt cần QA (iPhone/Android cụ thể nào)?
 - [ ] Có cần bản preview trước khi merge (môi trường ngoài `main`) không, hay QA cục bộ là đủ?
-- [ ] Mã task mới bắt đầu từ số nào (code hiện có đã nhắc mã từ repo gốc, vd. `T-066`)?
+- [x] Mã task mới bắt đầu từ số nào (code hiện có đã nhắc mã từ repo gốc, vd. `T-066`)? → Đã chốt 2026-11-13: repo này đánh số riêng từ T-001, mã tiếp theo xem ở BOARD.
 
 ## Task liên quan
 
