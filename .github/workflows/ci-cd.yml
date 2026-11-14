@@ -1,0 +1,42 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage site files
+        run: |
+          mkdir -p _site
+          cp index.html gate.js gate.css letter.enc.json robots.txt .nojekyll _site/
+          cp -r assets gift _site/
+      - name: Sanity check staged site
+        run: |
+          test -f _site/index.html
+          test -f _site/gate.js
+          test -f _site/letter.enc.json
+          test -f _site/gift/main.js
+          echo "Staged site OK"
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage site files
+        run: |
+          mkdir -p _site
+          cp index.html gate.js gate.css letter.enc.json robots.txt .nojekyll _site/
+          cp -r assets gift _site/
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=pigchan23rdbirthdaypresent
